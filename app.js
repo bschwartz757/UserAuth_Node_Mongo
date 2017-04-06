@@ -2,13 +2,22 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var session = require('express-session');
+var MongoStore = require('connect-mongo')(session);
 var app = express();
+
+mongoose.connect("mongodb://localhost:27017/bookworm");
+var db = mongoose.connection;
+//mongo errors
+db.on('error', console.error.bind(console, 'connection error'));
 
 //use sessions to track logins
 app.use(session({
   secret: 'this is really private',
   resave: true,
-  saveUninitialized: false
+  saveUninitialized: false,
+  store: new MongoStore({
+    mongooseConnection: db
+  })
 }));
 
 // make user ID available to templates
@@ -16,11 +25,6 @@ app.use(function(req, res, next) {
   res.locals.currentUser = req.session.userId;
   next();
 });
-
-mongoose.connect("mongodb://localhost:27017/bookworm");
-var db = mongoose.connection;
-//mongo errors
-db.on('error', console.error.bind(console, 'connection error'));
 
 // parse incoming requests
 app.use(bodyParser.json());
